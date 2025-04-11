@@ -4,7 +4,7 @@ import { CardStatus, newCardStatus } from '../src/cards/cardstatus.js'
 import { newFlashCard } from '../src/cards/flashcard.js'
 
 const createMostMistakesFirstSorter = newMostMistakesFirstSorter
-const createRecentMistakesFirstSorter = newRecentMistakesFirstSorter
+// const createRecentMistakesFirstSorter = newRecentMistakesFirstSorter
 
 describe('Test prioritization', () => {
   const flashCard1 = newFlashCard('Question1', 'Answer1')
@@ -63,15 +63,38 @@ describe('Test prioritization', () => {
     expect(cardsSorted[7]).toEqual(cardStatus8)
   })
 
-  test('Test recentRecentMistakesFirstSorter', () => {
-    const cardsSorted: CardStatus[] = createRecentMistakesFirstSorter().reorganize(cards)
-    expect(cardsSorted[0]).toEqual(cardStatus1)
-    expect(cardsSorted[1]).toEqual(cardStatus2)
-    expect(cardsSorted[2]).toEqual(cardStatus4)
-    expect(cardsSorted[3]).toEqual(cardStatus6)
-    expect(cardsSorted[4]).toEqual(cardStatus3)
-    expect(cardsSorted[5]).toEqual(cardStatus5)
-    expect(cardsSorted[6]).toEqual(cardStatus7)
-    expect(cardsSorted[7]).toEqual(cardStatus8)
+  test('Test newRecentMistakesFirstSorter', async () => {
+    const sorter = newRecentMistakesFirstSorter()
+
+    const c1 = newCardStatus(newFlashCard('Q1', 'A1'))
+    const c2 = newCardStatus(newFlashCard('Q2', 'A2'))
+    const c3 = newCardStatus(newFlashCard('Q3', 'A3'))
+
+    c1.recordResult(true)
+    await new Promise(resolve => setTimeout(resolve, 10))
+    c2.recordResult(false)
+    await new Promise(resolve => setTimeout(resolve, 10))
+    c3.recordResult(false)
+
+    const sorted = sorter.reorganize([c1, c2, c3])
+    expect(sorted[0]).toEqual(c3)
+    expect(sorted[1]).toEqual(c2)
+    expect(sorted[2]).toEqual(c1)
+
+    const clean1 = newCardStatus(newFlashCard('Q4', 'A4'))
+    const clean2 = newCardStatus(newFlashCard('Q5', 'A5'))
+    const cleanSorted = sorter.reorganize([clean1, clean2])
+    expect(cleanSorted).toEqual([clean1, clean2])
+
+    const onlyOneMistake = newCardStatus(newFlashCard('Q6', 'A6'))
+    onlyOneMistake.recordResult(false)
+
+    const mixedSorted1 = sorter.reorganize([clean1, onlyOneMistake])
+    expect(mixedSorted1[0]).toEqual(onlyOneMistake)
+    expect(mixedSorted1[1]).toEqual(clean1)
+
+    const mixedSorted2 = sorter.reorganize([onlyOneMistake, clean1])
+    expect(mixedSorted2[0]).toEqual(onlyOneMistake)
+    expect(mixedSorted2[1]).toEqual(clean1)
   })
 })
